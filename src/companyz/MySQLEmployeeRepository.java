@@ -1,117 +1,144 @@
 package companyz;
 
+import companyz.model.Division;
+import companyz.model.Employee;
+import companyz.model.JobTitle;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-public class MySQLEmployeeRepository {
-    private final Connection dbConnection;
+public class MySQLEmployeeRepository implements EmployeeRepository {
 
-    public MySQLEmployeeRepository(Connection dbConnection) {
-        this.dbConnection = dbConnection;
+    private final Connection connection;
+
+    public MySQLEmployeeRepository(Connection connection) throws SQLException {
+        this.connection = connection;
+        ensureSchema();
     }
 
-    // Task 1: Initialize table & dynamically apply SSN column if missing
-    // Task 1: Dynamically initialize table & mock records if missing
-    public void verifyDatabaseStructure() {
+    // Creates the employee table if it doesn't exist yet. No-op if it's already there.
+    private void ensureSchema() throws SQLException {
         String createTableQuery = "CREATE TABLE IF NOT EXISTS employee (" +
                 "empid INT PRIMARY KEY AUTO_INCREMENT, " +
                 "name VARCHAR(100) NOT NULL, " +
                 "ssn VARCHAR(9) NOT NULL, " +
                 "salary DECIMAL(10,2) NOT NULL, " +
-                "job_title VARCHAR(100) NOT NULL, " +
-                "division VARCHAR(100) NOT NULL" +
+                "job_title VARCHAR(50) NOT NULL, " +
+                "division VARCHAR(50) NOT NULL" +
                 ")";
-
-        String countQuery = "SELECT COUNT(*) FROM employee";
-
-        String seedDataQuery = "INSERT INTO employee (name, ssn, salary, job_title, division) VALUES " +
-                "('Alice Smith', '123456789', 60000.00, 'Software Engineer', 'Engineering'), " +
-                "('Bob Jones', '987654321', 110000.00, 'Product Manager', 'Product'), " +
-                "('Charlie Brown', '456789123', 75000.00, 'Data Analyst', 'Engineering')";
-
-        try (Statement stmt = dbConnection.createStatement()) {
-            // 1. Create the table if it doesn't exist yet
+        try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(createTableQuery);
-            System.out.println("[DB SETUP] 'employee' table verified/created successfully.");
-
-            // 2. Check if the table is empty. If yes, seed it with mock test profiles
-            try (ResultSet rs = stmt.executeQuery(countQuery)) {
-                if (rs.next() && rs.getInt(1) == 0) {
-                    stmt.executeUpdate(seedDataQuery);
-                    System.out.println("[DB SETUP] Mock employee dataset injected successfully.");
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("[DB ERROR] Auto-initialization structural check failed: " + e.getMessage());
         }
     }
 
-    // Task 2: Search by Name, SSN, or unique Employee ID
-    public List<Employee> searchEmployee(String lookup) {
-        List<Employee> results = new ArrayList<>();
-        String sql = "SELECT * FROM employee WHERE name LIKE ? OR ssn = ? OR empid = ?";
+    @Override
+    public int insertEmployee(Employee employee) throws SQLException {
+        String sql = "INSERT INTO employee (name, ssn, salary, job_title, division) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, employee.getName());
+            stmt.setString(2, employee.getSsn());
+            stmt.setDouble(3, employee.getSalary());
+            stmt.setString(4, employee.getJobTitle().name());
+            stmt.setString(5, employee.getDivision().name());
+            stmt.executeUpdate();
 
-        try (PreparedStatement stmt = dbConnection.prepareStatement(sql)) {
-            stmt.setString(1, "%" + lookup + "%");
-            stmt.setString(2, lookup);
+            try (ResultSet keys = stmt.getGeneratedKeys()) {
+                if (!keys.next()) {
+                    throw new SQLException("Insert succeeded but no generated empid was returned.");
+                }
+                return keys.getInt(1);
+            }
+        }
+    }
 
-            int numericId = -1;
-            try {
-                numericId = Integer.parseInt(lookup);
-            } catch (NumberFormatException ignored) {}
-            stmt.setInt(3, numericId);
+    @Override
+    public boolean updateEmployee(Employee employee) throws SQLException {
+        String sql = "UPDATE employee SET name = ?, ssn = ?, salary = ?, job_title = ?, division = ? WHERE empid = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, employee.getName());
+            stmt.setString(2, employee.getSsn());
+            stmt.setDouble(3, employee.getSalary());
+            stmt.setString(4, employee.getJobTitle().name());
+            stmt.setString(5, employee.getDivision().name());
+            stmt.setInt(6, employee.getEmpId());
+            return stmt.executeUpdate() > 0;
+        }
+    }
 
+    @Override
+    public boolean deleteEmployee(int empId) throws SQLException {
+        String sql = "DELETE FROM employee WHERE empid = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, empId);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
+    @Override
+    public List<Employee> searchByName(String name) throws SQLException {
+        String sql = "SELECT * FROM employee WHERE name LIKE ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, "%" + name + "%");
+            List<Employee> results = new ArrayList<>();
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    results.add(new Employee(
-                            rs.getInt("empid"),
-                            rs.getString("name"),
-                            rs.getString("ssn"),
-                            rs.getDouble("salary"),
-                            rs.getString("job_title"),
-                            rs.getString("division")
-                    ));
+                    results.add(mapRowToEmployee(rs));
                 }
             }
-        } catch (SQLException e) {
-            System.err.println("[DB ERROR] Search failed: " + e.getMessage());
-        }
-        return results;
-    }
-
-    // Task 3: Save general employee updates
-    public boolean updateEmployee(Employee emp) {
-        String sql = "UPDATE employee SET name = ?, ssn = ?, salary = ?, job_title = ?, division = ? WHERE empid = ?";
-        try (PreparedStatement stmt = dbConnection.prepareStatement(sql)) {
-            stmt.setString(1, emp.getName());
-            stmt.setString(2, emp.getSsn());
-            stmt.setDouble(3, emp.getSalary());
-            stmt.setString(4, emp.getJobTitle());
-            stmt.setString(5, emp.getDivision());
-            stmt.setInt(6, emp.getEmpId());
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("[DB ERROR] Update execution failed: " + e.getMessage());
-            return false;
+            return results;
         }
     }
 
-    // Task 4: Math equation-based range salary adjustment 
-    public int applyRangeRaise(double percentage, double minSalary, double maxSalary) {
+    @Override
+    public Optional<Employee> searchBySsn(String ssn) throws SQLException {
+        String sql = "SELECT * FROM employee WHERE ssn = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, ssn);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(mapRowToEmployee(rs)) : Optional.empty();
+            }
+        }
+    }
+
+    @Override
+    public Optional<Employee> searchByEmpId(int empId) throws SQLException {
+        String sql = "SELECT * FROM employee WHERE empid = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, empId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(mapRowToEmployee(rs)) : Optional.empty();
+            }
+        }
+    }
+
+    private Employee mapRowToEmployee(ResultSet rs) throws SQLException {
+        return new Employee(
+                rs.getInt("empid"),
+                rs.getString("name"),
+                rs.getString("ssn"),
+                rs.getDouble("salary"),
+                JobTitle.valueOf(rs.getString("job_title")),
+                Division.valueOf(rs.getString("division"))
+        );
+    }
+
+    // --- Maia: Part 2 (salary raise + reports) ---
+    // Carried over as-is from the previous version of this file; not touched here.
+    // Note: printDivisionPayReport() references a pay_statements table that doesn't exist
+    // in this schema (only `employee`), so it will currently always report a DB error.
+
+    public int applyRangeRaise(double percentage, double minSalary, double maxSalary) throws SQLException {
         String sql = "UPDATE employee SET salary = salary * (1 + ?) WHERE salary >= ? AND salary < ?";
-        try (PreparedStatement stmt = dbConnection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setDouble(1, percentage);
             stmt.setDouble(2, minSalary);
             stmt.setDouble(3, maxSalary);
             return stmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("[DB ERROR] Raise process interrupted: " + e.getMessage());
-            return 0;
         }
     }
 
-    // Task 5: Print aggregated Monthly Division Payroll Report
     public void printDivisionPayReport(String startDate, String endDate) {
         String sql = "SELECT e.division, SUM(p.gross_pay) AS total_payroll " +
                 "FROM employee e INNER JOIN pay_statements p ON e.empid = p.empid " +
@@ -119,7 +146,7 @@ public class MySQLEmployeeRepository {
                 "GROUP BY e.division";
 
         System.out.println("\n===== DIVISION MONTHLY PAYROLL REPORT =====");
-        try (PreparedStatement stmt = dbConnection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, startDate);
             stmt.setString(2, endDate);
 
