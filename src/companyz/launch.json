@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run EmployeeGUI",
+            "request": "launch",
+            "mainClass": "companyz.EmployeeGUI",
+            "vmArgs": "--module-path \"C:\\javafx-sdk-21.0.12\\lib\" --add-modules javafx.controls,javafx.fxml"
+        }
+    ]
+}
