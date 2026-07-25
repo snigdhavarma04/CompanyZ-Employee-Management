@@ -697,8 +697,8 @@ public class EmployeeGUI extends Application {
         //We had the idea to show our team info - I honestly do not know everyone's full names
         table.getColumns().addAll(nameCol, linkCol);
         table.setItems(FXCollections.observableArrayList(
-                new TeamMember("Jaay", "https://www.linkedin.com/in/jaay-placeholder"),
-                new TeamMember("Parth", "https://www.linkedin.com/in/parth-placeholder"),
+                new TeamMember("Janiya Green", "https://www.linkedin.com/in/jaaygreen"),
+                new TeamMember("Parth Chavan", "https://www.linkedin.com/in/parth-chavan-a5343b310/"),
                 new TeamMember("Snigdha Varma", "https://www.linkedin.com/in/snigdhavarma/"),
                 new TeamMember("Jalen Foreman", "https://www.linkedin.com/in/jalen-foreman-975a81207/"),
                 new TeamMember("Iyana Halliburton", "https://www.linkedin.com/in/iyana-halliburton-67211a244/"),
