@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Scanner;
@@ -134,18 +136,24 @@ public class Main {
 
                     case 4:
                         System.out.println("Configuring 3.2% increase parameter for salaries between $58,000 and $105,000...");
-                        int rows = ((MySQLEmployeeRepository) repo).applyRangeRaise(0.032, 58000.00, 105000.00);
+                        int rows = repo.updateSalaryByPercent(3.2, 58000.00, 105000.00);
                         System.out.println("[SUCCESS] Calculation applied. " + rows + " employees updated.");
                         break;
 
                     case 5:
-                        System.out.print("Enter reporting start date (YYYY-MM-DD): ");
-                        String start = scanner.nextLine();
-                        System.out.print("Enter reporting end date (YYYY-MM-DD): ");
-                        String end = scanner.nextLine();
-                        ((MySQLEmployeeRepository) repo).printDivisionPayReport(start, end);
-                        break;
+                        System.out.print("Enter report month (YYYY-MM): ");
+                        YearMonth month = YearMonth.parse(scanner.nextLine());
+                        Map<String, Double> report = repo.getTotalPayByDivision(month);
 
+                        if (report.isEmpty()) {
+                        System.out.println("No payroll data found.");
+                        } else {
+                            for (Map.Entry<String, Double> entry : report.entrySet()) {
+                                System.out.printf("%s: $%,.2f%n", entry.getKey(), entry.getValue());
+                            }
+                        }
+                        break;
+                        
                     case 6:
                         exit = true;
                         System.out.println("Database session closed. Goodbye!");
