@@ -702,7 +702,7 @@ public class EmployeeGUI extends Application {
                 new TeamMember("Snigdha Varma", "https://www.linkedin.com/in/snigdhavarma/"),
                 new TeamMember("Jalen Foreman", "https://www.linkedin.com/in/jalen-foreman-975a81207/"),
                 new TeamMember("Iyana Halliburton", "https://www.linkedin.com/in/iyana-halliburton-67211a244/"),
-                new TeamMember("Maia", "https://www.linkedin.com/in/maia-placeholder")
+                new TeamMember("Maia Cole", "https://www.linkedin.com/in/maia-placeholder")
         ));
 
         layout.getChildren().addAll(header, table);
