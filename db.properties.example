@@ -1,0 +1,5 @@
+# Copy this file to db.properties (same folder) and fill in the real values
+# shared in the team chat. db.properties is gitignored — never commit the real one.
+db.url=jdbc:mysql://your-host-here:3306/your-database-name
+db.user=your-username-here
+db.password=your-password-here
