@@ -38,3 +38,5 @@ bin/
 
 ### Local secrets ###
 db.properties
+.idea/
+*.iml
