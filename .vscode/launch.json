@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "EmployeeGUI",
+            "request": "launch",
+            "mainClass": "companyz.EmployeeGUI",
+            "projectName": "CompanyZ-Employee-Management-main_8f1a506e",
+            "vmArgs": "--module-path /Users/snigdhavarma/Downloads/javafx-sdk-26.0.2/lib --add-modules javafx.controls,javafx.fxml --enable-native-access=javafx.graphics"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "companyz.Main",
+            "projectName": "CompanyZ-Employee-Management-main_8f1a506e"
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        }
+    ]
+}

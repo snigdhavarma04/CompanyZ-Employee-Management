@@ -13,8 +13,6 @@ import java.util.Optional;
 public interface EmployeeRepository {
 
     int insertEmployee(Employee employee) throws SQLException;
-    
-    int applyRangeRaise(double percentage, double minimum, double maximum) throws SQLException;
 
     boolean updateEmployee(Employee employee) throws SQLException;
 

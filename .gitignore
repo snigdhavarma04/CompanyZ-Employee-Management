@@ -1,11 +1,11 @@
+### Build files ###
 target/
 *.class
 *.jar
-.DS_Store
-.vscode/*
-!.vscode/launch.json
-db.properties
+
 ### IntelliJ IDEA ###
+.idea/
+*.iml
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
@@ -21,7 +21,6 @@ out/
 .sts4-cache
 bin/
 !**/src/main/**/bin/
-!**/src/test/**/bin/
 
 ### NetBeans ###
 /nbproject/private/
@@ -31,12 +30,11 @@ bin/
 /.nb-gradle/
 
 ### VS Code ###
-.vscode/
+.vscode/*
+!.vscode/launch.json
 
 ### Mac OS ###
 .DS_Store
 
 ### Local secrets ###
 db.properties
-.idea/
-*.iml

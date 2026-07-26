@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run EmployeeGUI",
+            "request": "launch",
+            "mainClass": "companyz.EmployeeGUI",
+            "vmArgs": "--module-path \"${env:JAVAFX_HOME}/lib\" --add-modules javafx.controls,javafx.fxml --enable-native-access=javafx.graphics"
+        }
+    ]
+}

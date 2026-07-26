@@ -1,0 +1,10 @@
+{
+    "java.project.sourcePaths": [
+        "src"
+    ],
+    "java.project.outputPath": "target/classes",
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "/Users/snigdhavarma/Downloads/javafx-sdk-26.0.2/lib/*.jar"
+    ]
+}

@@ -22,6 +22,7 @@ public class MySQLEmployeeRepository implements EmployeeRepository {
         ensureSchema();
     }
 
+    // Creates the employee table if it doesn't exist yet. No-op if it's already there.
     private void ensureSchema() throws SQLException {
         String createTableQuery = "CREATE TABLE IF NOT EXISTS employee (" +
                 "empid INT PRIMARY KEY AUTO_INCREMENT, " +
@@ -127,15 +128,21 @@ public class MySQLEmployeeRepository implements EmployeeRepository {
         );
     }
 
-    @Override
-    public int applyRangeRaise(double percentage, double minimum, double maximum) throws SQLException {
-        return updateSalaryByPercent(percentage, minimum, maximum);
-    }
+    // --- Maia: Part 2 (salary raise + reports) ---
 
     @Override
-    public int updateSalaryByPercent(double percentage, double minSalary, double maxSalary) throws SQLException {
-        String sql = "UPDATE employee SET salary = salary * (1 + (? / 100.0)) WHERE salary >= ? AND salary < ?";
+    public int updateSalaryByPercent(
+            double percentage,
+            double minSalary,
+            double maxSalary) throws SQLException {
+
+        String sql =
+            "UPDATE employees " +
+            "SET salary = salary * (1 + (? / 100.0)) " +
+            "WHERE salary >= ? AND salary < ?";
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+
             stmt.setDouble(1, percentage);
             stmt.setDouble(2, minSalary);
             stmt.setDouble(3, maxSalary);
@@ -145,63 +152,92 @@ public class MySQLEmployeeRepository implements EmployeeRepository {
 
     @Override
     public List<PayrollRecord> getPayHistory(int empId) throws SQLException {
-        String sql = "SELECT payID, earnings, pay_date FROM payroll WHERE empid = ? ORDER BY pay_date";
+
+        String sql =
+                "SELECT payID, earnings, pay_date " +
+                "FROM payroll " +
+                "WHERE empid = ? " +
+                "ORDER BY pay_date";
+
         List<PayrollRecord> records = new ArrayList<>();
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, empId);
+
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
+                    while (rs.next()) {
                     PayrollRecord record = new PayrollRecord(
                         rs.getInt("payID"),
                         rs.getDouble("earnings"),
-                        rs.getDate("pay_date").toLocalDate()
-                    );
+                        rs.getDate("pay_date").toLocalDate());
+
                     records.add(record);
-                }
             }
         }
-        return records;
     }
 
+    return records;
+}
     @Override
-    public Map<String, Double> getTotalPayByJobTitle(YearMonth month) throws SQLException {
-        String sql = "SELECT jt.job_title, SUM(p.earnings) AS total_pay " +
+    public Map<String, Double> getTotalPayByJobTitle(YearMonth month)throws SQLException {
+
+        String sql =
+                "SELECT jt.job_title, SUM(p.earnings) AS total_pay " +
                 "FROM payroll p " +
                 "JOIN employee_job_titles ejt ON p.empid = ejt.empid " +
                 "JOIN job_titles jt ON ejt.job_title_id = jt.job_title_id " +
                 "WHERE p.pay_date >= ? AND p.pay_date < ? " +
-                "GROUP BY jt.job_title ORDER BY jt.job_title";
+                "GROUP BY jt.job_title " +
+                "ORDER BY jt.job_title";
+
         Map<String, Double> totals = new HashMap<>();
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setDate(1, java.sql.Date.valueOf(month.atDay(1)));
             stmt.setDate(2, java.sql.Date.valueOf(month.plusMonths(1).atDay(1)));
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    totals.put(rs.getString("job_title"), rs.getDouble("total_pay"));
-                }
+
+        try (ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                totals.put(
+                        rs.getString("job_title"),
+                        rs.getDouble("total_pay")
+                );
             }
         }
-        return totals;
     }
 
+    return totals;
+}
     @Override
-    public Map<String, Double> getTotalPayByDivision(YearMonth month) throws SQLException {
-        String sql = "SELECT d.Name AS division_name, SUM(p.earnings) AS total_pay " +
+    public Map<String, Double> getTotalPayByDivision(YearMonth month)
+        throws SQLException {
+
+        String sql =
+                "SELECT d.Name AS division_name, " +
+                "SUM(p.earnings) AS total_pay " +
                 "FROM payroll p " +
                 "JOIN employee_division ed ON p.empid = ed.empid " +
                 "JOIN division d ON ed.div_ID = d.ID " +
                 "WHERE p.pay_date >= ? AND p.pay_date < ? " +
-                "GROUP BY d.ID, d.Name ORDER BY d.Name";
+                "GROUP BY d.ID, d.Name " +
+                "ORDER BY d.Name";
+
         Map<String, Double> totals = new HashMap<>();
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setDate(1, java.sql.Date.valueOf(month.atDay(1)));
             stmt.setDate(2, java.sql.Date.valueOf(month.plusMonths(1).atDay(1)));
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    totals.put(rs.getString("division_name"), rs.getDouble("total_pay"));
-                }
+
+        try (ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                totals.put(
+                        rs.getString("division_name"),
+                        rs.getDouble("total_pay"));
             }
         }
-        return totals;
+    }
+
+    return totals;
+
     }
 }
