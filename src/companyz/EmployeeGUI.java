@@ -251,41 +251,87 @@ public class EmployeeGUI extends Application {
 
         TextField idInput = new TextField();
         idInput.setPromptText("Target Employee ID");
+        Button loadBtn = new Button("Load Current Info");
+
         TextField nameField = new TextField();
-        nameField.setPromptText("New Name");
+        nameField.setPromptText("Name (leave blank to keep current)");
         TextField ssnField = new TextField();
-        ssnField.setPromptText("New 9-Digit SSN");
+        ssnField.setPromptText("9-Digit SSN (leave blank to keep current)");
         TextField salaryField = new TextField();
-        salaryField.setPromptText("New Annual Salary");
+        salaryField.setPromptText("Annual Salary (leave blank to keep current)");
 
         ComboBox<JobTitle> titleBox = new ComboBox<>();
         titleBox.getItems().addAll(JobTitle.values());
-        titleBox.setPromptText("Select New Job Title");
+        titleBox.setPromptText("Job Title (leave unselected to keep current)");
 
         ComboBox<Division> divisionBox = new ComboBox<>();
         divisionBox.getItems().addAll(Division.values());
-        divisionBox.setPromptText("Select New Division");
+        divisionBox.setPromptText("Division (leave unselected to keep current)");
 
         Button updateBtn = new Button("Update Employee");
         Label statusLabel = new Label();
 
+        loadBtn.setOnAction(event -> {
+            try {
+                int empId = Integer.parseInt(idInput.getText().trim());
+                Optional<Employee> found = repo.searchByEmpId(empId);
+                if (found.isEmpty()) {
+                    statusLabel.setText("Employee ID not found.");
+                    return;
+                }
+                Employee emp = found.get();
+                nameField.setText(emp.getName());
+                ssnField.setText(emp.getSsn());
+                salaryField.setText(String.valueOf(emp.getSalary()));
+                titleBox.setValue(emp.getJobTitle());
+                divisionBox.setValue(emp.getDivision());
+                statusLabel.setText("Loaded current info for employee " + empId + ".");
+            } catch (NumberFormatException ex) {
+                statusLabel.setText("Error: Employee ID must be a number.");
+            } catch (Exception ex) {
+                statusLabel.setText("Error: " + ex.getMessage());
+            }
+        });
+
         updateBtn.setOnAction(event -> {
             try {
                 int empId = Integer.parseInt(idInput.getText().trim());
-                validateEmployeeInput(
-                        nameField.getText(), ssnField.getText(), salaryField.getText(),
-                        titleBox.getValue(), divisionBox.getValue()
-                );
+                Optional<Employee> found = repo.searchByEmpId(empId);
+                if (found.isEmpty()) {
+                    statusLabel.setText("Employee ID not found.");
+                    return;
+                }
+                Employee employee = found.get();
 
-                Employee employee = new Employee(
-                        empId,
-                        nameField.getText().trim(),
-                        ssnField.getText().trim(),
-                        Double.parseDouble(salaryField.getText().trim()),
-                        titleBox.getValue(),
-                        divisionBox.getValue()
-                );
-                
+                String newName = nameField.getText().trim();
+                if (!newName.isEmpty()) {
+                    employee.setName(newName);
+                }
+
+                String newSsn = ssnField.getText().trim();
+                if (!newSsn.isEmpty()) {
+                    if (!newSsn.matches("\\d{9}")) {
+                        throw new IllegalArgumentException("SSN must be 9 digits.");
+                    }
+                    employee.setSsn(newSsn);
+                }
+
+                String newSalary = salaryField.getText().trim();
+                if (!newSalary.isEmpty()) {
+                    double parsedSalary = Double.parseDouble(newSalary);
+                    if (parsedSalary <= 0) {
+                        throw new IllegalArgumentException("Salary must be greater than zero.");
+                    }
+                    employee.setSalary(parsedSalary);
+                }
+
+                if (titleBox.getValue() != null) {
+                    employee.setJobTitle(titleBox.getValue());
+                }
+                if (divisionBox.getValue() != null) {
+                    employee.setDivision(divisionBox.getValue());
+                }
+
                 boolean success = repo.updateEmployee(employee);
                 if (success) {
                     statusLabel.setText("Record updated.");
@@ -301,7 +347,8 @@ public class EmployeeGUI extends Application {
 
         layout.getChildren().addAll(
                 header,
-                idInput, nameField, ssnField, salaryField, titleBox, divisionBox,
+                new HBox(10, idInput, loadBtn),
+                nameField, ssnField, salaryField, titleBox, divisionBox,
                 updateBtn, statusLabel
         );
         return layout;
@@ -460,7 +507,7 @@ public class EmployeeGUI extends Application {
 
         raiseBtn.setOnAction(event -> {
             try {
-                double percentage = Double.parseDouble(percentageField.getText().trim()) / 100.0;
+                double percentage = Double.parseDouble(percentageField.getText().trim());
                 double minimum = Double.parseDouble(minimumSalaryField.getText().trim());
                 double maximum = Double.parseDouble(maximumSalaryField.getText().trim());
 
@@ -468,7 +515,7 @@ public class EmployeeGUI extends Application {
                     throw new IllegalArgumentException("Please check your raise values.");
                 }
 
-                int count = ((MySQLEmployeeRepository) repo).applyRangeRaise(percentage, minimum, maximum);
+                int count = repo.updateSalaryByPercent(percentage, minimum, maximum);
                 raiseStatus.setText("Updated " + count + " employee(s).");
             } catch (NumberFormatException ex) {
                 raiseStatus.setText("Error: All raise values must be numbers.");

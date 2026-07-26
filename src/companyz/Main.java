@@ -195,7 +195,9 @@ public class Main {
         try {
             int empId = Integer.parseInt(lookup);
             Optional<Employee> byId = repo.searchByEmpId(empId);
-            return byId.map(List::of).orElseGet(List::of);
+            if (byId.isPresent()) {
+                return List.of(byId.get());
+            }
         } catch (NumberFormatException ignored) {
             // not a numeric empid
         }
