@@ -1,3 +1,4 @@
+THIS IS JUST FOR AN IDEA...YOU CAN ADD/DELETE ANYTIME
 1. Parth — Database & Backend Integration
 "Hi everyone, I’m Parth, and I handled the database design and backend integration for our project.
 To get our data storage up and running, we used our schema.sql script to set up the employeeData database, and I wired up our secure JDBC connection properties. On the development side, I built out the MySQLEmployeeRepository class. This handles all the heavy lifting for our core database operations—like inserting new workers, deleting records, updating details, and executing secure, parameterized searches by ID, name, or SSN using PreparedStatement interfaces to keep everything safe and running smoothly.
