@@ -1,4 +1,4 @@
-# CompanyZ Employee Management — Setup Instructions
+# CompanyZ Employee Management - Setup Instructions
 
 This guide explains how to download the project from Git, install Java 21 and JavaFX 21, configure Visual Studio Code, and run the application.
 
